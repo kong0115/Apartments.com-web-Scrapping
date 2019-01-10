@@ -1,7 +1,7 @@
 # Apartments.com Web Scrapping Tool
 
 
-Using Python to web Scrap all the apartments data in a region from Apartments.com .
+Using Python to web Scrap all the apartments data in a region from Apartments.com.
 Then it is easier to use the data for further analysis. 
 
 
