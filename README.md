@@ -1,6 +1,6 @@
 # Apartments.com Web Scrapping Tool
 
-Version: AS OF 5/31/2018
+Version: 5/31/2018
 
 
 Using Python to web Scrap all the apartments data in a region from Apartments.com.
