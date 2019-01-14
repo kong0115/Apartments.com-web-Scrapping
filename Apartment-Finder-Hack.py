@@ -1,5 +1,4 @@
-# Apartment-Finder-Hack for Apartment.com
-
+# Web Scrapping for Apartments.com
 
 
 """
@@ -14,7 +13,8 @@ import re
 import pandas as pd
 import numpy as np
 
-####################### Search result
+# Search your interest area in Apartments.com
+# Put the URL of your search result page into the my_url
 my_url = 'https://www.apartments.com/2-bedrooms-under-1300/?bb=014wxvypzJ2u418xB'
 uClient = uReq(my_url)
 page_html = uClient.read()
@@ -25,6 +25,7 @@ page_soup = soup(page_html, 'html.parser')
 containers = page_soup.findAll('article', {'class': 'placard'})
 #containers = page_soup.findAll('header', {'class':'placarHeader'})
 
+# Page 1 is different than other pages
 link_list = []
 print('Page 1')
 for container in containers:
@@ -33,7 +34,7 @@ for container in containers:
     link_list.append(link)
 
 
-
+# For page 2 and later
 for x in range(2,8):
     my_url = 'https://www.apartments.com/2-bedrooms-under-1300/'+ str(x) + '/?bb=014wxvypzJ2u418xB'
     uClient = uReq(my_url)
@@ -62,6 +63,9 @@ for x in range(2,8):
 
 
 ####################### individual apt page
+
+# The following link_list.remove is to remove any web pag that causes the error 
+# They are usually ads, or lack of sufficient info for the apartment
 
 ## REMOVE link_list[122] https://www.apartments.com/11911-marsh-ln-dallas-tx-unit-216/kb25jmb/
 ## link_list[123] https://www.apartments.com/11911-marsh-ln-dallas-tx-unit-224/6b0zetv/
