@@ -17,8 +17,8 @@ This Web Scrapping Tool completely regain you the control of the Apartments data
 
 
 
+Notes:
 
-
-## Warning: Use with Caution! Your IP Address may be ban from Apartments.com by making too many requests in a short amount of time! 
-## Please read and obey the terms in Apartments.com & use time.sleep() to space out each request. 
-## Use on your own risk!
+Warning: Use with Caution! Your IP Address may be ban from Apartments.com by making too many requests in a short amount of time! 
+Please read and obey the terms in Apartments.com & use time.sleep() to space out each request. 
+Use on your own risk!
