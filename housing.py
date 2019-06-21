@@ -1,3 +1,11 @@
+# Web Scrapping for Apartments.com
+
+
+"""
+Created on Thu May 31 11:34:20 2018
+@author: dhuang
+"""
+
 from urllib.request import urlopen as uReq
 from bs4 import BeautifulSoup as soup
 import re
@@ -18,7 +26,7 @@ def initialSetup(websiteURL, x):
 	headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134',
     }
-	page_html = requests.get(my_url,headers=headers)
+	page_html = requests.get(my_url,headers=headers, proxies={'http': 'http://165.22.114.11:8080'})
 	page_soup = soup(page_html.text, 'html.parser')
 	return page_soup
 
@@ -69,8 +77,8 @@ def getApartmentDetail(apartment, data):
 		'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134',
 	}
 
-	time.sleep(random.randint(5, 10))
-	page_html = requests.get(my_url, headers=headers)
+	time.sleep(random.randint(3, 7))
+	page_html = requests.get(my_url, headers=headers, proxies={'http': 'http://165.22.114.11:8080'})
 	page_soup = soup(page_html.text, 'html.parser')
 
 	name = page_soup.find('h1', {'class': 'propertyName'}).text.strip()
@@ -83,7 +91,7 @@ def getApartmentDetail(apartment, data):
 	bedroom2B = page_soup.find('div', {'class': 'tabContent', 'data-tab-content-id': 'bed2'})
 	if bedroom2B == None:
 		return data
-	bedroom2B2B = bedroom2B.findAll('tr', {'class': 'rentalGridRow', 'data-beds': '2', 'data-baths': ["2", "2.5"]})
+	bedroom2B2B = bedroom2B.findAll('tr', {'class': 'rentalGridRow', 'data-beds': '2'})
 	for bedroom in bedroom2B2B:
 		rent = bedroom.find('td', {'class': 'rent'}).text.strip()
 		availability = bedroom.find('td', {'class': 'available'}).text.strip()
@@ -91,12 +99,19 @@ def getApartmentDetail(apartment, data):
 			rent = re.sub('[$, ]', '', rent)
 			if re.search('-', rent) != None:
 				priceRange = rent.split('-')
+				for price in priceRange:
+					if not price.isdigit():
+						return data
 				allPrice.append(int(priceRange[0]))
 				allPrice.append(int(priceRange[1]))
-			else:
+				rentList.append(rent)
+				availabilityList.append(availability)
+			elif rent.isdigit():
 				allPrice.append(int(rent))
-			rentList.append(rent)
-			availabilityList.append(availability)
+				rentList.append(rent)
+				availabilityList.append(availability)
+			else:
+				return data
 
 	if len(allPrice) > 0:
 		minPrice = 9999
@@ -115,7 +130,8 @@ def getApartmentDetail(apartment, data):
 	print(availabilityList)
 
 
-	year = page_soup.find(string={re.compile('Built in')})
+	year = page_soup.find('div', {'class': 'propertyFeatures'})
+	year = year.find(string={re.compile('Built in')})
 	if year == None:
 		year = int('0')
 	else:
@@ -130,7 +146,8 @@ def getApartmentDetail(apartment, data):
 	phone = page_soup.find('span', {'class': 'phoneNumber'})
 	if phone != None:
 		regex = re.search('([0-9-]){12}', phone.text.strip())
-		phone = regex.group()
+		if regex != None:
+			phone = regex.group()
 	print(phone)
 
 	days = []
@@ -150,6 +167,8 @@ def getApartmentDetail(apartment, data):
 		 'link': my_url}, ignore_index=True)
 
 	return data
+	#fileName = 'Apartment.csv'
+	#data.to_csv(fileName, sep=',', encoding='utf-8')
 
 def main():
 	numPages = int(getApartmentPageNum(sys.argv[1]))
