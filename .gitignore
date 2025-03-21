@@ -1,1 +1,2 @@
-Apartment.csv
+*.csv
+.env

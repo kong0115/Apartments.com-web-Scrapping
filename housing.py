@@ -36,12 +36,7 @@ def initializeSelenium(proxy=None):
     if proxy is not None:
         chrome_options.add_argument(f"--proxy-server={proxy}")
 
-    # Path to the ChromeDriver executable
-    chrome_driver_path = "C:\\chromedriver.exe"
-
-    # Create a new instance of the Chrome driver
-    service = Service(chrome_driver_path)
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(options=chrome_options)
     return driver
 
 
@@ -81,7 +76,7 @@ def getApartmentList(web_driver, websiteURL, page, wait_time=10):
         if link:
             count += 1
             apartment_list.append(link)
-            #print(count, " ", link)
+            # print(count, " ", link)
         else:
             print("apartment link not found!")
     return apartment_list
@@ -95,8 +90,12 @@ def getApartmentDetail(web_driver, apartment_link):
     )
     for div in divs_to_remove:
         div.decompose()
-    name = page_soup.find("h1", {"class": "propertyName"}).text.strip()
-
+    name = page_soup.find("h1", {"class": "propertyName"})
+    if name is None:
+        print("Property name not found")
+        return None
+    else: 
+        name = name.text.strip()
     bedroom2B2B_html_list = []
     floor_plan_list = []
     all_prices = []
@@ -197,9 +196,20 @@ def getApartmentDetail(web_driver, apartment_link):
         print("built year not found for the property")
     # print(year)
 
+    amenities = page_soup.find("div", {"class": "row printAmenities"}).text.strip()
+    if "ev charging" in amenities.lower():
+        ev_charging = "YES"
+    else:
+        ev_charging = "NO"
+
     address = page_soup.find("div", {"class": "propertyAddress"}).text.strip()
     address = " ".join(address.split()).replace("Property Address:", "").strip()
     # print(address)
+
+    location = (
+        page_soup.find("a", {"data-type": "neighborhood"})
+        or page_soup.find("a", {"data-type": "city"})
+    ).text.strip()
 
     phone = page_soup.find("div", {"class": "phoneNumber"}) or page_soup.find(
         "span", {"class": "phoneNumber"}
@@ -281,7 +291,9 @@ def getApartmentDetail(web_driver, apartment_link):
         "oneTimeFees": one_time_fees,
         "floorPlanList": floor_plan_list,
         "year": year,
+        "evCharging": ev_charging,
         "address": address,
+        "location": location,
         "reviewRating": review_rating,
         "reviewCount": review_count,
         "phone": phone,
@@ -321,10 +333,9 @@ def main():
         print(f"An error occurred: {e}")
         traceback.print_exc()
 
+    pd.DataFrame(apartment_list).to_csv(file_name, index=False)
     if web_driver is not None:
         web_driver.quit()
-    pd.DataFrame(apartment_list).to_csv(file_name, index=False)
-
 
 if __name__ == "__main__":
     main()
