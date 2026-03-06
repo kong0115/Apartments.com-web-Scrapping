@@ -6,10 +6,7 @@ import pandas as pd
 import sys
 import time
 import random
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from fake_useragent import UserAgent
+import undetected_chromedriver as uc
 import json
 import os
 import traceback
@@ -17,26 +14,10 @@ import traceback
 
 def initializeSelenium(proxy=None):
     # Configure options for Chrome
-    chrome_options = Options()
-    ## chrome_options.add_argument("--headless")  # Run in headless mode (no GUI)
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options = uc.ChromeOptions()
 
-    # Prevent detection of automation
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option("useAutomationExtension", False)
-    chrome_options.add_argument("window-size=1920,1080")
-    user_agent = UserAgent(
-        browsers=["chrome"], platforms=["pc"], min_version=120.0
-    ).random
-    print(user_agent)
-    chrome_options.add_argument(f"user-agent={user_agent}")
-
-    if proxy is not None:
-        chrome_options.add_argument(f"--proxy-server={proxy}")
-
-    driver = webdriver.Chrome(options=chrome_options)
+    chrome_options.add_argument(r"--user-data-dir=C:\chrome_automation")
+    driver = uc.Chrome(options=chrome_options, version_main=145)
     return driver
 
 
@@ -76,7 +57,7 @@ def getApartmentList(web_driver, websiteURL, page, wait_time=10):
         if link:
             count += 1
             apartment_list.append(link)
-            # print(count, " ", link)
+            print(count, " ", link)
         else:
             print("apartment link not found!")
     return apartment_list
@@ -94,7 +75,7 @@ def getApartmentDetail(web_driver, apartment_link):
     if name is None:
         print("Property name not found")
         return None
-    else: 
+    else:
         name = name.text.strip()
     bedroom2B2B_html_list = []
     floor_plan_list = []
@@ -135,12 +116,14 @@ def getApartmentDetail(web_driver, apartment_link):
             floor_plan_name = bedroom_plan.find(
                 "span", {"class": "modelName"}
             ).text.strip()
-            size = (
-                bedroom_plan.find("span", {"class": "detailsTextWrapper"})
-                .find("span", string=lambda text: text and "Sq Ft" in text)
-                .get_text(strip=True)
+            size = bedroom_plan.find("span", {"class": "detailsTextWrapper"}).find(
+                "span", string=lambda text: text and "Sq Ft" in text
             )
-
+            if size is None:
+                print("size is not found")
+                size = "NA"
+            else:
+                size = size.get_text(strip=True)
             availability = bedroom_plan.find("span", {"class": "availabilityInfo"})
             if availability:
                 availability = [availability.text.replace("Available", "").strip()]
@@ -285,19 +268,19 @@ def getApartmentDetail(web_driver, apartment_link):
     return {
         "name": name,
         "link": apartment_link,
+        "address": address,
+        "location": location,
         "minPrice": min_price,
         "maxPrice": max_price,
+        "year": year,
+        "reviewRating": review_rating,
+        "reviewCount": review_count,
         "monthlyFees": monthly_fees,
         "oneTimeFees": one_time_fees,
         "floorPlanList": floor_plan_list,
-        "year": year,
-        "evCharging": ev_charging,
-        "address": address,
-        "location": location,
-        "reviewRating": review_rating,
-        "reviewCount": review_count,
         "phone": phone,
         "hours": office_hours,
+        "evCharging": ev_charging,
     }
 
 
@@ -312,16 +295,20 @@ def main():
             apartment["link"]: apartment for apartment in apartment_list
         }
         web_driver = initializeSelenium()
+        """         
         num_pages = getApartmentPageNum(
-            web_driver,
-            sys.argv[1],
-        )
+                    web_driver,
+                    sys.argv[1],
+                ) 
+        """
+        num_pages = 2
         print(f"Total number of pages: {num_pages}")
         for x in range(1, num_pages + 1):
             apartment_links = getApartmentList(web_driver, sys.argv[1], x)
             # apartment_links = [
             #   ""
             # ]
+            # for link in apartment_links[:1]:
             for link in apartment_links:
                 if apartment_list_dict.get(link) is None:
                     apartment_detail = getApartmentDetail(web_driver, link)
@@ -336,6 +323,7 @@ def main():
     pd.DataFrame(apartment_list).to_csv(file_name, index=False)
     if web_driver is not None:
         web_driver.quit()
+
 
 if __name__ == "__main__":
     main()
